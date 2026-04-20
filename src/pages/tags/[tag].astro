@@ -1,0 +1,48 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import BlogPost from "../../components/BlogPost.astro";
+
+export async function getStaticPaths() {
+  const postsGlob = import.meta.glob("../posts/*.md", { eager: true });
+  const allPosts = Object.values(postsGlob);
+  
+  // DEBUG de compilación en terminal
+  console.log("🚨 Archivos .md encontrados:", allPosts.length);
+
+  return [
+    { params: { tag: "astro" }, props: { posts: allPosts } },
+    { params: { tag: "éxitos" }, props: { posts: allPosts } },
+    { params: { tag: "comunidad" }, props: { posts: allPosts } },
+    { params: { tag: "bloguear" }, props: { posts: allPosts } },
+    { params: { tag: "contratiempos" }, props: { posts: allPosts } },
+    { params: { tag: "aprender en público" }, props: { posts: allPosts } },
+  ];
+}
+
+const { tag } = Astro.params;
+
+// DEFENSA: Fallback a un array vacío si Astro.props.posts falla.
+// Esto previene el Type Error y mantiene el servidor vivo.
+const posts = Astro.props.posts || [];
+
+// AUDITORÍA: Si no llegan datos, disparamos una alerta directa a tu terminal.
+if (posts.length === 0) {
+  console.error("🚨 CTO DEBUG: Astro.props.posts es undefined o está vacío.");
+  console.error("👉 Tag capturado de la URL:", tag);
+}
+
+const filteredPosts = posts.filter((post: any) =>
+  post.frontmatter.tags?.includes(tag)
+);
+---
+
+<BaseLayout pageTitle={tag}>
+  <p>Entradas etiquetadas con {tag}</p>
+  <ul>
+    {
+      filteredPosts.length > 0 
+        ? filteredPosts.map((post: any) => <BlogPost url={post.url} title={post.frontmatter.title} />)
+        : <li>[DEBUG] No hay posts o falló la inyección de props. Revisa la consola de tu terminal.</li>
+    }
+  </ul>
+</BaseLayout>
